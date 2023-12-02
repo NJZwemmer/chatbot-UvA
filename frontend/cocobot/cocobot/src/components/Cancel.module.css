@@ -1,0 +1,17 @@
+.wrapper {
+    position: relative;
+    height: 60px;
+    width:  calc(100% - 40px);
+    background-color: #ff9d84;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    margin-right: 20px;
+    margin-left: 20px;
+  }
+
+  .wrapper:hover {
+    cursor: pointer;
+    background-color: #ff886b;
+  }

@@ -1,0 +1,75 @@
+  .userTimestamp {
+    color: rgb(150, 150, 150);
+    font-size: 12px;
+    text-align: right;
+  }
+
+  .assistantTimestamp {
+    color: rgb(150, 150, 150);
+    font-size: 12px;
+    text-align: left;
+  }
+  
+  .userMessage {
+    display: grid;
+    grid-template-columns: auto 60px;
+    align-items: center;
+    text-align: right;
+    width: fit-content;
+    min-height: 60px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 30px 30px 0 30px;
+    background-color: #323236;
+    margin-left: auto; 
+    margin-right: 0;
+  }
+
+  .userQuiz{
+    display: grid;
+    grid-template-columns: auto 60px;
+    align-items: center;
+    text-align: right;
+    width: fit-content;
+    min-height: 60px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 30px 30px 0 30px;
+    background-color: #323236;
+    margin-left: auto; 
+    margin-right: 0;
+  }
+
+  .userOption {
+    padding: 5px;
+    margin: 5px;
+    border-style: solid;
+    border-width: 2px;
+    border-radius: 10px;
+    border-color: rgb(70, 70, 70);
+  }
+
+  .userOption:hover {
+    cursor: pointer;
+    background-color:rgb(35, 35, 35);
+  }
+  
+  .assistantMessage {
+    display: grid;
+    grid-template-columns: 60px auto;
+    align-items: center;
+    width: fit-content;
+    min-height: 60px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 0 30px 30px 30px;
+    background-color: #323236;
+    margin-left: 0; 
+    margin-right: auto;
+  }
+  
+  .avatar {
+    width: 40px;
+    height: 40px;
+    filter: invert(100%);
+  }

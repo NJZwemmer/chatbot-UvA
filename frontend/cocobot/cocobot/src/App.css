@@ -1,0 +1,94 @@
+.App {
+  display: grid;
+  grid-template-columns: 200px auto;
+  width: 100vw;
+  margin: 0 auto;
+  height: 100vh;
+}
+
+.ChatColumn {
+  color: white;
+  margin: 0 0 0 -200px;
+  transition: 1s;
+}
+
+.ChatColumn.ShowHistory {
+  margin-left: 0;
+}
+
+.HistoryBtn {
+  border: none;
+  height: 60px;
+  font-size: 20px;
+  background-color: #323236;
+}
+
+.HistoryBtn:hover {
+  cursor: pointer;
+  background-color:rgb(35, 35, 35);
+}
+
+.HistoryColumn {
+  transform: translateX(-100%);
+  transition: 1s;
+  color: white;
+  background-color: #323236;
+  box-shadow: 5px 5px 5px rgb(190, 190, 190);
+}
+
+.HistoryColumn.ShowHistory {
+  transform: translate(0%, 0%);
+}
+
+.HistoryTitle {
+  padding: 20px;
+  text-align: center;
+  /* margin-bottom: 10px; */
+  color: white;
+  background-color: #323236;
+}
+
+h3 {
+  padding: 20px
+}
+
+.ChatTitle {
+  display: grid;
+  grid-template-columns: 60px 60px auto 60px 60px ;
+  height: 60px;
+  text-align: center;
+  margin-bottom: 10px;
+  color: white;
+  background-color: #323236;
+  box-shadow: 5px 5px 5px rgb(190, 190, 190);
+  position: relative;
+}
+
+.TitleBtn {
+  border: none;
+  height: 60px;
+  font-size: 20px;
+  background-color: #323236;
+}
+
+.TitleBtn:hover {
+  cursor: pointer;
+  background-color:rgb(35, 35, 35);
+}
+
+.ChatContent {
+  height: calc(100vh - 150px);
+  overflow-y: scroll;
+  margin-bottom: 10px;
+  padding-right: 20px;
+  padding-left: 20px;
+}
+
+.HistoryContent {
+  height: calc(100vh - 75px);
+  overflow-y: scroll;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
