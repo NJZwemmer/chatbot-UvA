@@ -1,6 +1,6 @@
   .historyItem {
     display: grid;
-    grid-template-columns: calc(100% - 30px) 30px;
+    grid-template-columns: calc(100% - 40px) 40px;
   }
   
   .wrapper {
@@ -24,14 +24,6 @@
   .btn:hover {
     cursor: pointer;
     background-color: #8b3333;
-  }
-
-  .border {
-    margin-left: 15%;
-    width: 70%;
-    border-style: solid;
-    border-width: 2px 0px 0px 0px;
-    border-color: rgb(70, 70, 70);
   }
 
   .dateTime {

@@ -3,10 +3,11 @@
   grid-template-columns: 200px auto;
   width: 100vw;
   margin: 0 auto;
-  height: 100vh;
+  max-height: 100vh;
 }
 
 .ChatColumn {
+  max-height: 100vh;
   color: white;
   margin: 0 0 0 -200px;
   transition: 1s;
@@ -34,22 +35,55 @@
   color: white;
   background-color: #323236;
   box-shadow: 5px 5px 5px rgb(190, 190, 190);
+  height: 100vh;
 }
 
 .HistoryColumn.ShowHistory {
   transform: translate(0%, 0%);
 }
 
+.HistoryBanner {
+  display: grid;
+  grid-template-columns: auto 0 auto;
+}
+
 .HistoryTitle {
   padding: 20px;
   text-align: center;
-  /* margin-bottom: 10px; */
   color: white;
   background-color: #323236;
 }
 
+.HistoryButton:hover {
+  cursor: pointer;
+  background-color:rgb(35, 35, 35);
+}
+
+.HorizontalBorder {
+  width: 100%;
+  border-style: solid;
+  border-width: 2px 0px 0px 0px;
+  border-color: rgb(70, 70, 70);
+}
+
+.VerticalBorder {
+  height: 100%;
+  border-style: solid;
+  border-width: 0px 0px 0px 2px;
+  border-color: rgb(70, 70, 70);
+  z-index: 1;
+}
+
+.Faded {
+  color: rgb(119, 119, 119);
+}
+
 h3 {
   padding: 20px
+}
+
+h4 {
+  padding: 5px;
 }
 
 .ChatTitle {
@@ -85,7 +119,6 @@ h3 {
 }
 
 .HistoryContent {
-  height: calc(100vh - 75px);
   overflow-y: scroll;
 }
 

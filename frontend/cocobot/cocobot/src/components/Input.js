@@ -55,21 +55,21 @@ export default function Input({ value, buttonPressed, botIsTyping, setValue, set
           ))}
         </div>
       )}
-      <button
+      {/* <button
         onClick={toggleDropdown}
         className={`${styles.dropbtn} ${isDropdownOpen ? styles.crossBtn : styles.questionMark}`}
         disabled={botIsTyping}
       >
         <FontAwesomeIcon icon={botIsTyping ? faSpinner : faCommentDots} spin={botIsTyping} inverse />
-      </button>
-      <div className={styles.border}></div>
+      </button> */}
+      {/* <div className={styles.border}></div> */}
       <input
         autoFocus
         onKeyDown={(e) => (
           e.key === 'Enter' ? onClick() : null
         )}
         className={styles.text}
-        placeholder="Your prompt here..."
+        placeholder="Type your question here..."
         value={value}
         onChange={onChange}
         disabled={botIsTyping}

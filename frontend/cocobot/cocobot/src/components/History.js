@@ -5,11 +5,15 @@ import { faTrash } from '@fortawesome/free-solid-svg-icons';
 export default function History({ question, onClick, deleteFunction, timestamp }) {
   return (
     <div>
-      <div className={styles.border}></div>
       <div className={styles.historyItem}>
         <div className={styles.wrapper} onClick={onClick}>
           <div>
-            <p>{question.substring(0, 15)}...</p>
+            {question.length > 18 ? 
+              <p>{question.substring(0, 15)}...</p>
+              :
+              <p>{question}</p>
+            }
+            
             <p className={styles.dateTime}>{timestamp.split(":")[0] + ":" + timestamp.split(":")[1]}</p>
             </div>
         </div>

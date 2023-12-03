@@ -141,7 +141,8 @@ def store_history(data):
     # Adjust insertion data accordingly.
     if 'Correct' in data:
         insertion_data["Quiz"] = True
-        insertion_data["Correct"] = data['Correct']  
+        insertion_data["Subject"] = data['Subject']
+        insertion_data["Correct"] = data['Correct']
         insertion_data["Is_correct"] = data['Is_correct']    
 
 
@@ -179,7 +180,7 @@ def delete_history(id=None):
 
 
 def list_history(id=None, quiz=None):
-    print(f"LIST {session.get('chat_id')}")
+    # print(f"LIST {session.get('chat_id')}")
     # Check if 'chat_id' is present in the session
     if 'chat_id' not in session:
         create_chat_identifier()
@@ -189,8 +190,8 @@ def list_history(id=None, quiz=None):
 
     try:
         if id is None and quiz is None:
-        # Aggregate query to group by 'chat_id' and find the latest document within each group
-        # Used for getting the last sent message in any of the chats to display in the history list.
+            # Aggregate query to group by 'chat_id' and find the latest document within each group
+            # Used for getting the last sent message in any of the chats to display in the history list.
             pipeline = [
                 {'$match': {'user_id': session["user_id"]}},
                 {'$sort': {'timestamp': -1}},
@@ -201,10 +202,31 @@ def list_history(id=None, quiz=None):
                 {'$replaceRoot': {'newRoot': '$latest_message'}},
                 {'$sort': {'timestamp': -1}}
             ]
-        elif quiz:
-        # Get the quiz results for history listing.
+        elif id is None and quiz:
+            # Get the quiz results for history listing.
             pipeline = [
                 {"$match": {'user_id': session["user_id"], 'Quiz': True}},
+                {"$group": {
+                    '_id': '$chat_id',
+                    'subject' : {'$first' : "$Subject"},
+                    'correct_count': {'$sum': {'$cond': [{'$eq': ['$Is_correct', True]}, 1, 0]}},
+                    'total_count': {'$sum': 1},
+                    'score': {'$avg': {'$cond': [{'$eq': ['$Is_correct', True]}, 100, 0]}},
+                    'timestamp': {'$first': '$timestamp'}
+                }},
+                {"$project": {
+                    '_id': 1,
+                    'subject':1,
+                    'correct_count': 1,
+                    'total_count': 1,
+                    'score': {'$round': ['$score', 2]},
+                    'timestamp': 1
+                }}
+            ]
+        elif id and quiz:
+            # Get specific quiz results for history listing.
+            pipeline = [
+                {"$match": {'chat_id': id, 'Quiz': True}},
                 {"$group": {
                     '_id': '$chat_id',
                     'correct_count': {'$sum': {'$cond': [{'$eq': ['$Is_correct', True]}, 1, 0]}},
@@ -294,7 +316,6 @@ def handle_history_request(id=None):
 
 # *************************** QUIZ *****************************
 @app.route('/api/database/quiz/subjects', methods=['GET'])
-@cross_origin()
 def get_all_quiz_subjects():
     """
     Provides a list of all possible quiz subjects that are stored in the database.
@@ -352,15 +373,16 @@ def get_next_question(subject):
             # Extract the next question and its options
             question, data = list(questions.items())[progress]
 
+            _, _, hour_minute = get_current_time()
             question_data = {
                 'Question': question,
                 'Options': data['Options'],
+                'timestamp' : hour_minute,
             }
 
             return question_data
     else:
         return None
-
 
 # Expected data: subject. Requires creation of quiz session with progress.
 # Returns first question along with possible answers (in case of multiple choice - currently only supported).
@@ -374,8 +396,6 @@ def start_quiz():
     Creates a progress session variable and sets quiz running to true.
     """
 
-    # TODO: research whether logic for new chat should be done by API or Frontend synchronous calls.
-    create_chat_identifier()
     try:
         data = request.json
         subject = data.get('Subject')
@@ -413,6 +433,7 @@ def answer_question():
         session['quiz_progress'] += 1
 
         data["Quiz"] = True
+        data["Subject"] = subject
         data["Correct"] = answer_data["Correct"]
         data["Is_correct"] = answer_data["Is_correct"]
         data["timestamp"] = answer_data["timestamp"]
@@ -423,22 +444,46 @@ def answer_question():
         # Get the next question for the quiz
         question_data = get_next_question(subject)
 
+        _, _, hour_minute = get_current_time()
         if question_data:
             return jsonify(question_data)
         else:
             session["quiz_running"] = False
-            return jsonify({'message': 'Quiz completed'})
+            data = {
+                "message" : "Quiz completed",
+                "timestamp" : hour_minute
+            }
+            return jsonify(data)
 
     except Exception as e:
         return jsonify({'error': str(e)})
 
+@app.route('/api/database/quizzes', methods=['GET'])
+def get_quiz_results():
+    return list_history(id=None, quiz=True)
 
 # Expected data: quiz score result. Requires quiz session with progress.
 # Returns how many questions were answered correctly.
 @app.route('/api/database/quiz/result', methods=['GET'])
-def get_quiz_results():
-    return list_history(quiz=True)
+@app.route('/api/database/quiz/result/<id>', methods=['GET'])
+def handle_quiz_request(id=None):
+    """
+    Main API endpoint for all quiz related tasks.
+    
+    Expected data:
+    GET <id> -> id of which quiz item should be requested.
+    GET -> none.
+    """
+    if request.method == "GET":
+        if id is not None:
+            response, status = list_history(id, quiz=True)
+            response = response[0]
+        else:
+            response, status = list_history(quiz=True)
+    else:
+        response, status = {"error": "Unsupported method"}, 405
 
+    return response, status
 
 # *************************** QUIZ *****************************
 if __name__ == '__main__':

@@ -21,20 +21,29 @@ export default function App() {
 
   const [history, setHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [quizzesSelected, setQuizzesSelected] = useState(false);
+  const [showChatSuggestions, setShowChatSuggestions] = useState(false);
 
-  // This is how we set and get session data
-  // ReactSession.set("username", "Bob");
-  // ReactSession.get("username");
+  const getQuizResult = async (chatId) => {
+    console.log("getQuizResults called!");
+    const response = await fetch("/api/database/quiz/result/" + chatId);
+    const data = await response.json();
+
+    const correctCount = data.correct_count;
+    const totalCount = data.total_count;
+    const score = data.score;
+    const timestamp = data.timestamp;
+
+    const prompt = {
+      role: "assistant",
+      content: "You scored " + correctCount + " out of " + totalCount + ". \n That is a score of: " + score + "%.",
+      time: timestamp,
+    };
+
+    setMessages((messages) => [...messages, prompt]);
+  }
 
   const quizReaction = async (reaction) => {
-    setMessages((messages) => [
-      ...messages.slice(0, -1), // Remove the last message
-      {
-        role: "user",
-        content: reaction,
-        time: "00:00",
-      },
-    ]);
 
     const response = await fetch("/api/database/quiz/answer", {
       method: "POST",
@@ -49,9 +58,19 @@ export default function App() {
     });
 
     const quiz = await response.json();
+    const timestamp = quiz.timestamp;
+    setMessages((messages) => [
+      ...messages.slice(0, -1), // Remove the last message
+      {
+        role: "user",
+        content: reaction,
+        time: timestamp,
+      },
+    ]);
 
     console.log(quiz);
-    if (quiz.message == "Quiz completed") {
+    if (quiz.message) {
+      getQuizResult(currentChatId);
       return;
     }
 
@@ -61,7 +80,7 @@ export default function App() {
     const prompt = {
       role: "assistant",
       content: question,
-      time: "00:00",
+      time: timestamp,
     };
 
     setMessages((messages) => [...messages, prompt]);
@@ -70,7 +89,7 @@ export default function App() {
       quiz: true,
       role: "user",
       content: options,
-      time: "00:00",
+      time: timestamp,
     };
 
     setMessages((messages) => [...messages, answers])
@@ -78,25 +97,39 @@ export default function App() {
   }
 
   const startQuiz = async () => {
-    newChat();
+    await newChat();
+    const subject = "Creating a chatbot";
     const response = await fetch("/api/database/quiz/start", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        Subject: "Creating a chatbot",
+        Subject: subject,
       }),
     });
 
     const quiz = await response.json();
     const question = quiz.Question;
     const options = quiz.Options;
+    const timestamp = quiz.timestamp;
+
+    setHistory(history.map((item, idx) => {
+      if (item.chat_id === currentChatId) {
+        return {
+          ...item,
+          quiz: true,
+          question: subject,
+          timestamp: timestamp
+        }
+      }
+      return item
+    }))
 
     const prompt = {
       role: "assistant",
       content: question,
-      time: "00:00",
+      time: timestamp,
     };
 
     setMessages((messages) => [...messages, prompt]);
@@ -105,15 +138,41 @@ export default function App() {
       quiz: true,
       role: "user",
       content: options,
-      time: "00:00",
+      time: timestamp,
     };
 
     setMessages((messages) => [...messages, answers])
   }
 
   function switch_History() {
-    console.log("switched");
     setShowHistory(!showHistory);
+  }
+
+  const switch_quizSelected = async (value) => {
+    if (value) {
+      try {
+        const response = await fetch("/api/database/quizzes");
+        const data = await response.json();
+        
+        const historyList = data.map((item, index) => ({
+          chat_id: index,
+          correct_count: item.correct_count,
+          score: item.score,
+          question: item.subject,
+          timestamp: item.timestamp,
+          total_count: item.total_count,
+        }));
+    
+        setHistory(historyList);
+        console.log(history);
+      } catch (error) {
+        console.error("Error fetching questions:", error);
+      }
+    } else {
+      getHistory();
+    }
+    setQuizzesSelected(value);
+
   }
 
   const getHistory = async () => {
@@ -123,6 +182,7 @@ export default function App() {
       
       const historyList = data.map((item, index) => ({
         id: index,
+        quiz: item.Quiz,
         chat_id: item.chat_id,
         user_id: item.user_id,
         question: item.Question,
@@ -138,16 +198,36 @@ export default function App() {
 
   useEffect(() => {
     getHistory();
+    newChat();
   }, []);
 
-  const selectHistory = async (chatid) => {
+  const selectHistory = async (chatId) => {
     try {
-      const response = await fetch("/api/database/history/" + chatid);
+      const response = await fetch("/api/database/history/" + chatId);
       const data = await response.json();
-      setCurrentChatId(chatid);
 
+      setCurrentChatId(chatId);
       setMessages([]);
-      data.forEach((item, index) => {
+
+      if (data[0].Quiz) {
+        data.forEach((item, index) => {
+          setMessages(prevMessages => [
+            ...prevMessages, 
+            {
+              role: "assistant",
+              content: item.Question,
+              time: item.timestamp
+            },
+            {
+              role: "user",
+              content: item.Answer,
+              time: item.timestamp
+            }
+          ]);
+        });
+
+      } else {
+        data.forEach((item, index) => {
           setMessages(prevMessages => [
             ...prevMessages, 
             {
@@ -162,6 +242,8 @@ export default function App() {
             }
           ]);
         });
+      }
+      
 
     } catch (error) {
       console.error("Error fetching questions:", error);
@@ -187,6 +269,8 @@ export default function App() {
 
   useEffect(() => {
     // Scroll to the last message when the messages state changes
+    console.log("Scroll called");
+    console.log(lastMessageRef.current);
     if (lastMessageRef.current) {
       if (messages[messages.length - 1].content.length === 1){
         lastMessageRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -257,15 +341,38 @@ export default function App() {
         }
       }
 
-      setHistory(oldHistory => {
-        return oldHistory.filter(historyItem => historyItem.chat_id === currentChatId ? () => {historyItem.question = question.current; historyItem.timestamp = timestamp} : true)
-      })
+      console.log(currentChatId);
+      console.log(history);
+      if (history.some(item => currentChatId == item.chat_id)){
+        setHistory(history.map((item, idx) => {
+          if (item.chat_id === currentChatId) {
+            if (!item.quiz) {
+              return {
+                ...item,
+                question: question.current,
+                timestamp: timestamp
+              }
+            }
+          }
+          return item
+        }))
+      } else {
+        const newChat = {
+          quiz: false,
+          chat_id: currentChatId,
+          question: question.current,
+          timestamp: timestamp,
+        };
+  
+        setHistory((historyItems) => [...historyItems, newChat]);
+      }
+      
 
-      console.log(JSON.stringify({
-        Question: question.current,
-        Answer: responseText,
-        Time: timestamp,
-      }));
+      // console.log(JSON.stringify({
+      //   Question: question.current,
+      //   Answer: responseText,
+      //   Time: timestamp,
+      // }));
 
       setInput("");
     } catch (error) {
@@ -275,26 +382,15 @@ export default function App() {
     }
   };
 
-  // const clear = async () => {
-  //   try {
-  //     const response = await fetch("https://192.168.100.30:5001/api/database/history", {
-  //       method: "DELETE",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //     });
-  //   } catch (error) {
-  //     console.error("Error fetching answer:", error);
-  //   }
-  //   setMessages([]);
-  // };
-
   const newChat = async ()=> {
     try {
       const response = await fetch("/api/create_new_chat");
       const data = await response.json();
+
       setCurrentChatId(data.chat_id);
+      console.log("Chat id set: " + data.chat_id);
       setMessages([]);
+
     } catch (error) {
       console.error("Error fetching questions:", error);
     }
@@ -304,6 +400,13 @@ export default function App() {
     <div className="App">
       <div className={`HistoryColumn ${showHistory ? 'ShowHistory' : null}`}>
         <h3 className="HistoryTitle">History</h3>
+        <div className="HorizontalBorder"></div>
+        <div className="HistoryBanner">
+          <h4 className={`HistoryTitle HistoryButton ${quizzesSelected ? 'Faded' : null}`} onClick={() => switch_quizSelected(false)}>Chats</h4>
+          <div className="VerticalBorder"></div>
+          <h4 className={`HistoryTitle HistoryButton ${quizzesSelected ? null : 'Faded'}`} onClick={() => switch_quizSelected(true)}>Quizzes</h4>
+        </div>
+        <div className="HorizontalBorder"></div>
         <div className="HistoryContent">
           {history.map((el, i) => (
             <History
@@ -311,7 +414,7 @@ export default function App() {
               question={el.question}
               timestamp={el.timestamp}
               onClick={() => {selectHistory(el.chat_id); switch_History()}}
-              deleteFunction={() => {deleteHistory(el.chat_id); switch_History()}}
+              deleteFunction={() => {deleteHistory(el.chat_id)}}
             />
           ))}
         </div>
