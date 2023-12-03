@@ -11,8 +11,8 @@ export default function Message({ onClick, quiz, role, content, time }) {
           <div>
             <div className={styles.userQuiz}>
               <div>
-                { content.map(element =>
-                  <div className={styles.userOption} onClick={() => {onClick(element)}}>{element}</div>
+                { content.map((element, index) =>
+                  <div key={index} className={styles.userOption} onClick={() => {onClick(element)}}>{element}</div>
                 )}
               </div>
               <div>
@@ -21,9 +21,9 @@ export default function Message({ onClick, quiz, role, content, time }) {
                   className={styles.avatar}
                   alt="profile avatar"
                 />
-                <div className={styles.userTimestamp}>{time}</div>
               </div>
             </div>
+            <div className={styles.userTimestamp}>{time}</div>
           </div>
         ): (
           <div>
@@ -37,26 +37,27 @@ export default function Message({ onClick, quiz, role, content, time }) {
                   className={styles.avatar}
                   alt="profile avatar"
                 />
-                <div className={styles.userTimestamp}>{time}</div>
               </div>
             </div>
+            <div className={styles.userTimestamp}>{time}</div>
           </div>
         )
-        
 
       )}
       { role === "assistant" && (
-        <div className={styles.assistantMessage}>
-          <div>
-            <img
-              src={role === "assistant" ? bot : user}
-              className={styles.avatar}
-              alt="profile avatar"
-            />
-            <div className={styles.assistantTimestamp}>{time}</div>
-          </div>
-          <div>
-            <p>{content}</p>
+        <div>
+          <div className={styles.assistantTimestamp}>{time}</div>
+          <div className={styles.assistantMessage}>
+            <div>
+              <img
+                src={role === "assistant" ? bot : user}
+                className={styles.avatar}
+                alt="profile avatar"
+              />
+            </div>
+            <div>
+              <p>{content}</p>
+            </div>
           </div>
         </div>
       )}

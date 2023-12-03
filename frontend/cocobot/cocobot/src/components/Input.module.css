@@ -7,8 +7,8 @@
   border-radius: 10px;
   background-color: #323236;
   position: relative;
-  margin-right: 20px;
-  margin-left: 20px;
+  margin-right: 15%;
+  margin-left: 15%;
 }
 
 .text {
@@ -17,7 +17,7 @@
   background: none;
   padding: 20px;
   color: white;
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .dropbtn {
@@ -52,26 +52,41 @@
   z-index: 1;
 }
 
-/* Add this style for dropdown items */
-.dropdownItem {
+/* Add this style for suggestion items */
+.suggestionItem {
   padding: 10px;
-  color: white;
-  background-color: #323236;;
+  color: black;
   cursor: pointer;
+  font-size: 12px;
+  border: 2px solid rgb(167, 167, 167);
   border-radius: 10px; /* Added border-radius for a bubble effect */
   margin-bottom: 10px; /* Added margin to separate bubbles */
 }
 
-/* Additional styles for the dropdown container */
-.dropdownContainer {
+.suggestionItem:hover {
+  border: 2px solid rgb(167, 167, 167);
+  background: rgba(70, 70, 70, 0.247);
+}
+
+/* Add margin-right to create space between horizontally aligned divs */
+.suggestionItem:nth-child(2) {
+  margin-left: 20px; /* Adjust this value based on your desired space */
+}
+
+.suggestionItem:nth-child(4) {
+  margin-left: 20px; /* Adjust this value based on your desired space */
+}
+
+/* Additional styles for the suggestion container */
+.suggestionContainer {
+  display: grid;
+  grid-template-columns: auto auto;
   position: absolute;
   width: 100%;
   bottom: 100%; /* Position above the input field */
   left: 0;
   /* background-color: #323236; */
   border-radius: 10px 10px 10px 10px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  z-index: 1;
   overflow: hidden; /* Hide overflow for a cleaner look */
 }
 

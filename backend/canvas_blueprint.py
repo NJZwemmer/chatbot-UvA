@@ -88,7 +88,7 @@ def redirect_uri():
         # Set the session variables for this user to be used throughout the backend.
         session['user_id'] = result['https://purl.imsglobal.org/spec/lti/claim/lti1p1']['user_id']
         session['course_name'] = result['https://purl.imsglobal.org/spec/lti/claim/resource_link']['title']
-        session['course_info'] = result['https://purl.imsglobal.org/spec/lti/claim/resource_link']
+        session['course_info'] = result['https://purl.imsglobal.org/spec/lti/claim/context']
 
         # Construct the redirect URL
         redirect_url = (
@@ -181,7 +181,11 @@ def return_course_info():
     Once a full oauth flow is performed, the course_info session variable is set and available to return information
     about the course and its user.
     """
-    return session['course_info']
+
+    if 'course_info' in session:
+        return session['course_info']
+    else:
+        return {"title" : "No Canvas connection", "label" : "Unknown"}
 
 
 # TODO: omit?

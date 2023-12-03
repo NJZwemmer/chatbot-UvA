@@ -36,3 +36,11 @@ def get_current_time():
     formatted_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
     hour_minute = current_time.strftime("%H:%M")
     return current_time, formatted_time, hour_minute
+
+
+def get_all_from_collection(collection, key):
+    data = collection.find()
+    result = []
+    for doc in data:
+        result.append(doc[key])
+    return result

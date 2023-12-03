@@ -1,23 +1,26 @@
 import React, { useState, useEffect } from "react";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faShare, faSpinner, faCommentDots } from '@fortawesome/free-solid-svg-icons';
+import { faShare, faSpinner } from '@fortawesome/free-solid-svg-icons';
 
 import styles from "./Input.module.css";
 
-export default function Input({ value, buttonPressed, botIsTyping, setValue, setButtonPressed, onChange, onClick }) {
-  const [isDropdownOpen, setDropdownOpen] = useState(false);
-  const [questions, setQuestions] = useState([]);
+export default function Input({ value, buttonPressed, botIsTyping, setValue, setButtonPressed, onChange, onClick, showChatSuggestions, suggestionSource, setQuizSubject }) {
+  const [suggestions, setSuggestions] = useState([]);
 
-  const toggleDropdown = () => {
-    getQuestions();
-    setDropdownOpen(!isDropdownOpen);
+  const handlesuggestionItemClick = (item) => {
+    if (suggestionSource === "suggestions") {
+      setValue(item.suggestion);
+      setButtonPressed(true);
+      getSuggestions();
+    } else {
+      setQuizSubject(item.suggestion);
+    }
+    
   };
 
-  const handleDropdownItemClick = (item) => {
-    setDropdownOpen(false);
-    setValue(item.question);
-    setButtonPressed(true);
-  };
+  useEffect(() => {
+    getSuggestions();
+  }, [suggestionSource]);
 
   useEffect(() => {
     if (buttonPressed) {
@@ -26,50 +29,43 @@ export default function Input({ value, buttonPressed, botIsTyping, setValue, set
     }
   }, [buttonPressed, onClick, setButtonPressed]);
 
-  const getQuestions = async () => {
+  const getSuggestions = async () => {
+    console.log("getSuggestions called!");
+    console.log("/api/database/" + suggestionSource)
     try {
-      const response = await fetch("/api/database/questions");
+      const response = await fetch("/api/database/" + suggestionSource);
       const data = await response.json();
 
-      const questionList = data.map((item, index) => ({
-        id: index,
-        question: Object.values(item)[0],
+      const suggestionList = data.map((item) => ({
+        suggestion: item,
       }));
-      setQuestions(questionList);
+      setSuggestions(suggestionList);
     } catch (error) {
-      console.error("Error fetching questions:", error);
+      console.error("Error fetching suggestions:", error);
     }
   };
 
   return (
     <div className={styles.wrapper}>
-      {isDropdownOpen && questions.length > 0 && (
-        <div className={styles.dropdownContainer}>
-          {questions.map((question) => (
+      {showChatSuggestions && suggestions.length > 0 && (
+        <div className={styles.suggestionContainer}>
+          {suggestions.map((suggestion, index) => (
             <div
-              className={styles.dropdownItem}
-              key={question.id}
-              onClick={() => handleDropdownItemClick(question)}>
-              {question.question}
+              className={styles.suggestionItem}
+              key={index}
+              onClick={() => handlesuggestionItemClick(suggestion)}>
+              {suggestion.suggestion}
             </div>
           ))}
         </div>
       )}
-      {/* <button
-        onClick={toggleDropdown}
-        className={`${styles.dropbtn} ${isDropdownOpen ? styles.crossBtn : styles.questionMark}`}
-        disabled={botIsTyping}
-      >
-        <FontAwesomeIcon icon={botIsTyping ? faSpinner : faCommentDots} spin={botIsTyping} inverse />
-      </button> */}
-      {/* <div className={styles.border}></div> */}
       <input
         autoFocus
         onKeyDown={(e) => (
           e.key === 'Enter' ? onClick() : null
         )}
         className={styles.text}
-        placeholder="Type your question here..."
+        placeholder="Message..."
         value={value}
         onChange={onChange}
         disabled={botIsTyping}

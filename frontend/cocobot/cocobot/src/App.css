@@ -125,3 +125,21 @@ h4 {
 ::-webkit-scrollbar {
   display: none;
 }
+
+.EmptyHistoryMessage {
+  padding: 10px; /* Optional: Add padding for better visual appeal */
+  margin-top: 20%;
+  border-radius: 5px; /* Optional: Add border-radius for rounded corners */
+  text-align: center; /* Center-align the text inside the div */
+}
+
+.EmptyHistoryMessage svg {
+  margin-bottom: -2px; /* Adjust the position of the icon for better alignment */
+}
+
+.SuggestionsInstruction {
+  color: rgb(164, 161, 161);
+  margin-top: 78%;
+  margin-left: 15%;
+  font-size: 14px;
+}

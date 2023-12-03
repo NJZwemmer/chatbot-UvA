@@ -9,6 +9,7 @@ from canvas_blueprint import canvas_blueprint
 from common import *
 from bson import json_util
 import json
+import random
 
 app = Flask(__name__)
 
@@ -49,20 +50,19 @@ def create_chat_identifier():
     chat_id = create_new_chat_identifier()
     return jsonify({'chat_id': chat_id, 'message': f'Unique identifier {chat_id} created'})
 
-
 # TODO: omit eventually. Necessary now to get browser to accept self-signed certificate.
 @app.route('/allow', methods=['GET'])
 def test_endpoint():
     return jsonify({"response": "You have successfuly added the self-signed certificate exception."})
 
-@app.route('/api/database/questions', methods=['GET'])
-def get_questions_database():
-    collection = mongo.db.questions
-    data = collection.find()
-    result = []
-    for index, doc in enumerate(data):
-        result.append({index: doc['Question']})
-    return jsonify(result)
+@app.route('/api/database/suggestions', methods=['GET'])
+def get_suggestions_database():
+    result = get_all_from_collection(mongo.db.questions, 'Question')
+
+    number_of_suggestions = 4
+    random_suggestions = random.sample(result, number_of_suggestions)
+
+    return jsonify(random_suggestions)
 
 # Function is used by both /api/database/answer route and
 # the /api/database/history/store route.
@@ -178,7 +178,6 @@ def delete_history(id=None):
     else:
         return {'message' : f'Nothing to delete for user {session["user_id"]}.'}, 204
 
-
 def list_history(id=None, quiz=None):
     # print(f"LIST {session.get('chat_id')}")
     # Check if 'chat_id' is present in the session
@@ -193,7 +192,7 @@ def list_history(id=None, quiz=None):
             # Aggregate query to group by 'chat_id' and find the latest document within each group
             # Used for getting the last sent message in any of the chats to display in the history list.
             pipeline = [
-                {'$match': {'user_id': session["user_id"]}},
+                {'$match': {'user_id': session["user_id"], 'Quiz': False}},
                 {'$sort': {'timestamp': -1}},
                 {'$group': {
                     '_id': '$chat_id',
@@ -203,7 +202,7 @@ def list_history(id=None, quiz=None):
                 {'$sort': {'timestamp': -1}}
             ]
         elif id is None and quiz:
-            # Get the quiz results for history listing.
+            # Get the list of quiz items.
             pipeline = [
                 {"$match": {'user_id': session["user_id"], 'Quiz': True}},
                 {"$group": {
@@ -215,16 +214,17 @@ def list_history(id=None, quiz=None):
                     'timestamp': {'$first': '$timestamp'}
                 }},
                 {"$project": {
-                    '_id': 1,
+                    'chat_id': 1,
                     'subject':1,
                     'correct_count': 1,
                     'total_count': 1,
                     'score': {'$round': ['$score', 2]},
                     'timestamp': 1
-                }}
+                }},
+                {'$sort': {'timestamp': -1}}
             ]
         elif id and quiz:
-            # Get specific quiz results for history listing.
+            # Get specific quiz messages.
             pipeline = [
                 {"$match": {'chat_id': id, 'Quiz': True}},
                 {"$group": {
@@ -235,19 +235,22 @@ def list_history(id=None, quiz=None):
                     'timestamp': {'$first': '$timestamp'}
                 }},
                 {"$project": {
-                    '_id': 1,
+                    'chat_id': 1,
                     'correct_count': 1,
                     'total_count': 1,
                     'score': {'$round': ['$score', 2]},
                     'timestamp': 1
                 }}
             ]
+            session['chat_id'] = id
+
         else:
             # Get the full list of messages for any specific chat. Used when switching to a previous/different chat and rendering the 
             # history in the UI.
             pipeline = [
                 {'$match': {'chat_id': id}}
             ]
+            session['chat_id'] = id
 
         # Execute the aggregation pipeline
         history_documents = mongo.db.history.aggregate(pipeline)
@@ -322,12 +325,12 @@ def get_all_quiz_subjects():
     Expected data:
     - None.
     """
-    collection = mongo.db.quizzes
-    data = collection.find()
-    result = []
-    for doc in data:
-        result.append(doc['Subject'])
-    return jsonify(result)
+    result = get_all_from_collection(mongo.db.quizzes, 'Subject')
+
+    number_of_suggestions = 2
+    random_suggestions = random.sample(result, number_of_suggestions)
+
+    return jsonify(random_suggestions)
 
 def check_answer(subject, user_answer):
     """
@@ -490,4 +493,4 @@ if __name__ == '__main__':
     # Use the generated certificate and private key
     cert_path = os.path.join(os.path.dirname(__file__), '../.cert/server.crt')
     key_path = os.path.join(os.path.dirname(__file__), '../.cert/server.key')
-    app.run(debug=True, host='0.0.0.0', ssl_context=(cert_path, key_path))
+    app.run(host='0.0.0.0', ssl_context=(cert_path, key_path))

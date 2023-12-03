@@ -8,6 +8,7 @@ import "./App.css";
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHistory, faCommentMedical, faListCheck, faQuestion } from '@fortawesome/free-solid-svg-icons';
+import { convertCompilerOptionsFromJson } from "typescript";
 
 export default function App() {
   const question = useRef("");
@@ -20,12 +21,15 @@ export default function App() {
   const [currentChatId, setCurrentChatId] = useState("");
 
   const [history, setHistory] = useState([]);
-  const [showHistory, setShowHistory] = useState(false);
+  const [showHistory, setShowHistory] = useState(true);
   const [quizzesSelected, setQuizzesSelected] = useState(false);
-  const [showChatSuggestions, setShowChatSuggestions] = useState(false);
+  const showChatSuggestions = useRef(false);
+  const suggestionSource = useRef("suggestions");
+  const [quizSubject, setQuizSubject] = useState("");
+  const [quizActive, setQuizActive] = useState(false);
+  const [canvasInfo, setCanvasInfo] = useState();
 
   const getQuizResult = async (chatId) => {
-    console.log("getQuizResults called!");
     const response = await fetch("/api/database/quiz/result/" + chatId);
     const data = await response.json();
 
@@ -51,13 +55,15 @@ export default function App() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        Subject: "Creating a chatbot",
+        Subject: quizSubject,
         Question: messages.slice(-2, -1)[0].content,
         Answer: reaction
       }),
     });
 
     const quiz = await response.json();
+    console.log(quizSubject)
+    console.log(quiz);
     const timestamp = quiz.timestamp;
     setMessages((messages) => [
       ...messages.slice(0, -1), // Remove the last message
@@ -68,9 +74,22 @@ export default function App() {
       },
     ]);
 
-    console.log(quiz);
     if (quiz.message) {
       getQuizResult(currentChatId);
+      suggestionSource.current = "suggestions";
+      setQuizSubject("");
+
+      if (quizzesSelected) {
+        const newChat = {
+          quiz: true,
+          chat_id: currentChatId,
+          question: quizSubject,
+          timestamp: timestamp,
+        };
+  
+        setHistory((historyItems) => [...historyItems, newChat]);
+      }
+
       return;
     }
 
@@ -96,16 +115,21 @@ export default function App() {
 
   }
 
-  const startQuiz = async () => {
+  const setupQuiz = async () => {
     await newChat();
-    const subject = "Creating a chatbot";
+    showChatSuggestions.current = true;
+    suggestionSource.current = "quiz/subjects";
+  }
+
+  const startQuiz = async () => {
+    setQuizActive(true);
     const response = await fetch("/api/database/quiz/start", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        Subject: subject,
+        Subject: quizSubject,
       }),
     });
 
@@ -119,7 +143,7 @@ export default function App() {
         return {
           ...item,
           quiz: true,
-          question: subject,
+          question: quizSubject,
           timestamp: timestamp
         }
       }
@@ -142,7 +166,15 @@ export default function App() {
     };
 
     setMessages((messages) => [...messages, answers])
+    showChatSuggestions.current = false;
+    suggestionSource.current = "suggestions";
   }
+
+  useEffect(() => {
+    if (quizSubject !== ""){
+      startQuiz();
+    }
+  }, [quizSubject])
 
   function switch_History() {
     setShowHistory(!showHistory);
@@ -155,7 +187,8 @@ export default function App() {
         const data = await response.json();
         
         const historyList = data.map((item, index) => ({
-          chat_id: index,
+          id: index,
+          chat_id: item._id,
           correct_count: item.correct_count,
           score: item.score,
           question: item.subject,
@@ -164,15 +197,14 @@ export default function App() {
         }));
     
         setHistory(historyList);
-        console.log(history);
       } catch (error) {
+        setHistory([]);
         console.error("Error fetching questions:", error);
       }
     } else {
       getHistory();
     }
     setQuizzesSelected(value);
-
   }
 
   const getHistory = async () => {
@@ -189,20 +221,41 @@ export default function App() {
         answer: item.Answer,
         timestamp: item.timestamp,
       }));
-  
+
       setHistory(historyList);
     } catch (error) {
-      console.error("Error fetching questions:", error);
+      setHistory([]);
+      console.error("Error fetching history:", error);
+    }
+  };
+
+  const getCanvasInfo = async () => {
+    try {
+      const response = await fetch("/canvas/information");
+      const data = await response.json();
+
+      setCanvasInfo({
+        title: data.title,
+        label: data.label
+      });
+
+    } catch (error) {
+      setCanvasInfo([])
+      console.error("Error fetching Canvas Information:", error);
     }
   };
 
   useEffect(() => {
     getHistory();
     newChat();
+    // Added by Niels
+    getCanvasInfo();
   }, []);
 
   const selectHistory = async (chatId) => {
     try {
+      setQuizActive(false);
+      showChatSuggestions.current = false;
       const response = await fetch("/api/database/history/" + chatId);
       const data = await response.json();
 
@@ -210,7 +263,7 @@ export default function App() {
       setMessages([]);
 
       if (data[0].Quiz) {
-        data.forEach((item, index) => {
+        data.forEach((item) => {
           setMessages(prevMessages => [
             ...prevMessages, 
             {
@@ -225,9 +278,10 @@ export default function App() {
             }
           ]);
         });
-
+        setQuizActive(true);
+        getQuizResult(chatId); // Added by Niels (To get score for quiz item.)
       } else {
-        data.forEach((item, index) => {
+        data.forEach((item) => {
           setMessages(prevMessages => [
             ...prevMessages, 
             {
@@ -243,7 +297,6 @@ export default function App() {
           ]);
         });
       }
-      
 
     } catch (error) {
       console.error("Error fetching questions:", error);
@@ -251,8 +304,7 @@ export default function App() {
   };
 
   const deleteHistory = async (chatid) => {
-    console.log("Delete called");
-    currentChatId == chatid && newChat();
+    currentChatId === chatid && newChat();
     try {
       const response = await fetch("/api/database/history/" + chatid, {
         method: "DELETE",
@@ -269,16 +321,18 @@ export default function App() {
 
   useEffect(() => {
     // Scroll to the last message when the messages state changes
-    console.log("Scroll called");
-    console.log(lastMessageRef.current);
     if (lastMessageRef.current) {
-      if (messages[messages.length - 1].content.length === 1){
+      if (botIsTyping.current && messages[messages.length - 1].content.length === 1){
+        lastMessageRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+      } else if ((!botIsTyping.current) && messages[messages.length - 1].content.length > 0){
         lastMessageRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
       }
     }
-  }, [messages]);
+  }, [messages, lastMessageRef]);
 
   const handleSubmit = async () => {
+
+    showChatSuggestions.current = false;
 
     try {
       const response = await fetch("/api/database/answer", {
@@ -341,9 +395,7 @@ export default function App() {
         }
       }
 
-      console.log(currentChatId);
-      console.log(history);
-      if (history.some(item => currentChatId == item.chat_id)){
+      if (history.some(item => currentChatId === item.chat_id)){
         setHistory(history.map((item, idx) => {
           if (item.chat_id === currentChatId) {
             if (!item.quiz) {
@@ -366,13 +418,6 @@ export default function App() {
   
         setHistory((historyItems) => [...historyItems, newChat]);
       }
-      
-
-      // console.log(JSON.stringify({
-      //   Question: question.current,
-      //   Answer: responseText,
-      //   Time: timestamp,
-      // }));
 
       setInput("");
     } catch (error) {
@@ -382,14 +427,18 @@ export default function App() {
     }
   };
 
-  const newChat = async ()=> {
+  const newChat = async () => {
     try {
+      setQuizActive(false);
       const response = await fetch("/api/create_new_chat");
       const data = await response.json();
 
       setCurrentChatId(data.chat_id);
       console.log("Chat id set: " + data.chat_id);
       setMessages([]);
+
+      suggestionSource.current = "suggestions";
+      showChatSuggestions.current = true;
 
     } catch (error) {
       console.error("Error fetching questions:", error);
@@ -408,15 +457,21 @@ export default function App() {
         </div>
         <div className="HorizontalBorder"></div>
         <div className="HistoryContent">
-          {history.map((el, i) => (
-            <History
-              key={i}
-              question={el.question}
-              timestamp={el.timestamp}
-              onClick={() => {selectHistory(el.chat_id); switch_History()}}
-              deleteFunction={() => {deleteHistory(el.chat_id)}}
-            />
-          ))}
+          {history.length > 0 ?
+            (history.map((el, i) => (
+              <History
+                key={i}
+                question={el.question}
+                timestamp={el.timestamp}
+                onClick={() => {selectHistory(el.chat_id); showChatSuggestions.current = false}}
+                deleteFunction={() => {deleteHistory(el.chat_id)}}
+              />
+            ))):
+            (
+            <div className="EmptyHistoryMessage">
+                <FontAwesomeIcon icon={faHistory} /> &nbsp; Nothing here yet
+            </div>
+            )}
         </div>
         {/* <Clear onClick={clear} botIsTyping={botIsTyping.current} /> */}
       </div>
@@ -424,29 +479,39 @@ export default function App() {
         <div className="ChatTitle">
           <button className="TitleBtn" onClick={switch_History}><FontAwesomeIcon icon={faHistory} inverse/></button>
           <button className="TitleBtn" ><FontAwesomeIcon icon={faQuestion} inverse/></button>
-          <h3>Current Chat</h3>
-          <button className="TitleBtn" onClick={startQuiz}><FontAwesomeIcon icon={faListCheck} inverse/></button>
+          {canvasInfo ?
+          (<h3>Current Chat - {canvasInfo.title}</h3>) : (<h3>Current Chat - No Canvas connection</h3>)
+          }
+          <button className="TitleBtn" onClick={setupQuiz}><FontAwesomeIcon icon={faListCheck} inverse/></button>
           <button className="TitleBtn" onClick={newChat}><FontAwesomeIcon icon={faCommentMedical} inverse/></button>
         </div>
         <div className="ChatContent" ref={messagesContainerRef}>
+        {showChatSuggestions.current && !botIsTyping.current && (
+          <div className="SuggestionsInstruction">
+            Suggestions:
+          </div>
+        )}
           {messages.map((el, i) => (
             <div key={i} ref={i === messages.length - 1 ? lastMessageRef : null}>
               <Message onClick={quizReaction} quiz={el.quiz ? true : false} role={el.role} content={el.content} time={el.time} />
             </div>
           ))}
         </div>
-        { !botIsTyping.current && (
+        { !botIsTyping.current && !quizActive && (
           <Input
             value={input}
             buttonPressed={buttonPressed}
             botIsTyping={botIsTyping.current}
+            showChatSuggestions={showChatSuggestions.current}
+            suggestionSource={suggestionSource.current}
+            setQuizSubject = {setQuizSubject}
             setValue={setInput}
             setButtonPressed={setButtonPressed}
             onChange={(e) => setInput(e.target.value)}
             onClick={() => {question.current = input; handleSubmit()}}
           />
         )}
-        { botIsTyping.current && (
+        { botIsTyping.current && !quizActive && (
           <Cancel
             onClick={() => {botIsTyping.current = false}}
             botIsTyping={botIsTyping.current}
