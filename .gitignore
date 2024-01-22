@@ -160,7 +160,7 @@ cython_debug/
 #.idea/
 
 # Flask added by Niels
-flask_session/
+/backend/flask_session/
 
 # Cert folder added by Niels
 .cert/

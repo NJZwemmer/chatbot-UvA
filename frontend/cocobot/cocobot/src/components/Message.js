@@ -1,4 +1,6 @@
 import bot from "../icons/bot.png";
+// import bot from "../icons/VISION_NO_BG.png";
+
 import user from "../icons/user.png";
 
 import styles from "./Message.module.css";

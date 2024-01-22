@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
-import ReactSession from './ReactSession';
 import Message from "./components/Message";
 import Input from "./components/Input";
 import History from "./components/History";
 import Cancel from "./components/Cancel";
+import ChatTitle from "./components/ChatTitle";
 import "./App.css";
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faHistory, faCommentMedical, faListCheck, faQuestion } from '@fortawesome/free-solid-svg-icons';
-import { convertCompilerOptionsFromJson } from "typescript";
+import { faHistory } from '@fortawesome/free-solid-svg-icons';
+import ChatContent from "./components/ChatContent";
+// import ChatMainColumn from "./components/ChatMainColumn";
 
 export default function App() {
   const question = useRef("");
@@ -176,7 +177,7 @@ export default function App() {
     }
   }, [quizSubject])
 
-  function switch_History() {
+  function switchHistory() {
     setShowHistory(!showHistory);
   }
 
@@ -318,17 +319,6 @@ export default function App() {
       console.error("Error fetching questions:", error);
     }
   };
-
-  useEffect(() => {
-    // Scroll to the last message when the messages state changes
-    if (lastMessageRef.current) {
-      if (botIsTyping.current && messages[messages.length - 1].content.length === 1){
-        lastMessageRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
-      } else if ((!botIsTyping.current) && messages[messages.length - 1].content.length > 0){
-        lastMessageRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
-      }
-    }
-  }, [messages, lastMessageRef]);
 
   const handleSubmit = async () => {
 
@@ -473,30 +463,44 @@ export default function App() {
             </div>
             )}
         </div>
-        {/* <Clear onClick={clear} botIsTyping={botIsTyping.current} /> */}
       </div>
+
+      {/* 
+        TODO: Refactoring.
+      
+        <ChatMainColumn 
+        showHistory={showHistory}
+        switchHistory={switchHistory}
+        setupQuiz={setupQuiz}
+        newChat={newChat}
+        messages={messages}
+        quizActive={quizActive}
+        setInput={setInput}
+        handleSubmit={handleSubmit}
+        botIsTyping={botIsTyping}
+        showChatSuggestions={showChatSuggestions}
+        suggestionSource={suggestionSource}
+        quizReaction={quizReaction}
+        lastMessageRef={lastMessageRef}
+        messagesContainerRef={messagesContainerRef}
+        canvasInfo={canvasInfo}
+      /> */}
+  
       <div className={`ChatColumn ${showHistory ? 'ShowHistory' : null}`}>
-        <div className="ChatTitle">
-          <button className="TitleBtn" onClick={switch_History}><FontAwesomeIcon icon={faHistory} inverse/></button>
-          <button className="TitleBtn" ><FontAwesomeIcon icon={faQuestion} inverse/></button>
-          {canvasInfo ?
-          (<h3>Current Chat - {canvasInfo.title}</h3>) : (<h3>Current Chat - No Canvas connection</h3>)
-          }
-          <button className="TitleBtn" onClick={setupQuiz}><FontAwesomeIcon icon={faListCheck} inverse/></button>
-          <button className="TitleBtn" onClick={newChat}><FontAwesomeIcon icon={faCommentMedical} inverse/></button>
-        </div>
-        <div className="ChatContent" ref={messagesContainerRef}>
-        {showChatSuggestions.current && !botIsTyping.current && (
-          <div className="SuggestionsInstruction">
-            Suggestions:
-          </div>
-        )}
-          {messages.map((el, i) => (
-            <div key={i} ref={i === messages.length - 1 ? lastMessageRef : null}>
-              <Message onClick={quizReaction} quiz={el.quiz ? true : false} role={el.role} content={el.content} time={el.time} />
-            </div>
-          ))}
-        </div>
+        <ChatTitle
+          switchHistory={switchHistory}
+          setupQuiz={setupQuiz}
+          newChat={newChat}
+          canvasInfo={canvasInfo}
+        />
+        <ChatContent
+          messages={messages}
+          quizReaction={quizReaction}
+          lastMessageRef={lastMessageRef}
+          botIsTyping={botIsTyping}
+          messagesContainerRef={messagesContainerRef}
+        />
+
         { !botIsTyping.current && !quizActive && (
           <Input
             value={input}
