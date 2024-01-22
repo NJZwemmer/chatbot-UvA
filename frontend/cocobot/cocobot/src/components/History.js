@@ -23,7 +23,6 @@ export default function History({ question, onClick, deleteFunction, timestamp }
           >
           <FontAwesomeIcon icon={faTrash} inverse/>
         </button>
-        
       </div>
     </div>
     

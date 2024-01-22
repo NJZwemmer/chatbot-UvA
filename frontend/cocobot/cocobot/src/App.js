@@ -463,6 +463,9 @@ export default function App() {
             </div>
             )}
         </div>
+        <div className="HistoryVersion">
+          v0.1 pre-alpha
+        </div>
       </div>
 
       {/* 
@@ -485,6 +488,8 @@ export default function App() {
         messagesContainerRef={messagesContainerRef}
         canvasInfo={canvasInfo}
       /> */}
+      
+      
   
       <div className={`ChatColumn ${showHistory ? 'ShowHistory' : null}`}>
         <ChatTitle

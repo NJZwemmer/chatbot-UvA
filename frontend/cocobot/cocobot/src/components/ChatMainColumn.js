@@ -3,6 +3,14 @@ import ChatTitle from './ChatTitle';
 import ChatContent from './ChatContent';
 import InputArea from './InputArea';
 
+
+const styles = {
+  background: `url(${backgroundImage}) no-repeat center center fixed, rgba(255, 255, 255, 0.5)`,
+  backgroundSize: '35%',
+  backgroundPosition: 'center'
+};
+
+
 const ChatMainColumn = ({
   showHistory,
   switchHistory,
@@ -21,7 +29,7 @@ const ChatMainColumn = ({
   messagesContainerRef
 }) => {
   return (
-    <div className={`ChatColumn ${showHistory ? 'ShowHistory' : null}`}>
+    <div className={`ChatColumn ${showHistory ? 'ShowHistory' : null}`} style={styles}>
       <ChatTitle
         switchHistory={switchHistory}
         setupQuiz={setupQuiz}

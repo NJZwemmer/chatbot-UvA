@@ -1,13 +1,13 @@
 import React, { useEffect } from 'react';
 import Message from './Message';
-import backgroundImage from '../icons/VISION_BG.png';
+import backgroundImage from '../logos/full_removed_bg.png';
 
 
 const ChatContent = ({ messages, quizReaction, lastMessageRef, botIsTyping, messagesContainerRef }) => {
 
   const styles = {
     background: `url(${backgroundImage}) no-repeat center center fixed, rgba(255, 255, 255, 0.5)`,
-    backgroundSize: '25%',
+    backgroundSize: '30%',
     backgroundPosition: 'center'
   };
 

@@ -122,6 +122,13 @@ h4 {
   overflow-y: scroll;
 }
 
+.HistoryVersion {
+  position: absolute;
+  bottom: 0;
+  color: #535359;
+  left: 5%;
+}
+
 ::-webkit-scrollbar {
   display: none;
 }
